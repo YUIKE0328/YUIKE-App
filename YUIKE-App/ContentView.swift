@@ -20,7 +20,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 40) {
-                Text("Puppet Visualizer")
+                Text("YUIKE App")
                     .font(.title)
                     .bold()
                 
