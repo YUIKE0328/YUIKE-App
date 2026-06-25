@@ -10,12 +10,13 @@ import MediaPlayer
 
 struct ContentView: View {
     @StateObject private var playerManager = MusicPlayerManager()
+    // Add the audio analyzer to the view
+    @StateObject private var audioAnalyzer = AudioAnalyzer()
     @State private var showPicker = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
-            // Dark background for better visualizer contrast
             Color(.systemBackground)
                 .ignoresSafeArea()
             
@@ -26,12 +27,11 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                // The Marionette Puppet (Animated by playback state)
-                PuppetView(isPlaying: playerManager.isPlaying)
+                // Pass the real-time bass level to the puppet
+                PuppetView(isPlaying: playerManager.isPlaying, bassLevel: audioAnalyzer.bassLevel)
                 
                 Spacer()
                 
-                // Track Info Display
                 VStack(spacing: 8) {
                     Text(playerManager.currentTitle)
                         .font(.headline)
@@ -42,7 +42,6 @@ struct ContentView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                // Control Buttons
                 HStack(spacing: 30) {
                     Button(action: {
                         showPicker = true
@@ -74,9 +73,18 @@ struct ContentView: View {
         .sheet(isPresented: $showPicker) {
             MediaPickerRepresentation(playerManager: playerManager)
         }
+        // Start/Stop audio monitoring based on playback state
+        .onChange(of: playerManager.isPlaying) { oldState, isPlaying in
+            if isPlaying {
+                audioAnalyzer.startMonitoring()
+            } else {
+                audioAnalyzer.stopMonitoring()
+            }
+        }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .background {
                 playerManager.stop()
+                audioAnalyzer.stopMonitoring()
             }
         }
     }

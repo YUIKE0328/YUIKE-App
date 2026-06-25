@@ -271,6 +271,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "YUIKE-App/Info.plist";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Access your music library to sync with this visualizer";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to analyze music beats for the puppet visualization.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -305,6 +306,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "YUIKE-App/Info.plist";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Access your music library to sync with this visualizer";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to analyze music beats for the puppet visualization.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
