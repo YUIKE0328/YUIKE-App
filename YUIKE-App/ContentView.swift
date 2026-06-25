@@ -14,8 +14,17 @@ struct ContentView: View {
     @State private var showPicker = false
     @Environment(\.scenePhase) private var scenePhase
     
-    // 🔧 ADDED: State to hold user-controlled manual BPM
-    @State private var manualBPM: Double = 120.0
+    // UserDefaults key for saving manual BPM preference
+    private let savedManualBPMKey = "UserSavedManualBPM"
+    
+    // 🔧 CHANGE: Initialize directly from UserDefaults, fallback to 120 if empty
+    @State private var manualBPM: Double
+    
+    init() {
+        let storedBPM = UserDefaults.standard.double(forKey: "UserSavedManualBPM")
+        // If no value exists, double(forKey:) returns 0.0, so we default to 120.0
+        _manualBPM = State(initialValue: storedBPM > 0 ? storedBPM : 120.0)
+    }
 
     var body: some View {
         ZStack {
@@ -29,25 +38,10 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                // Pass animation level to the puppet
                 PuppetView(isPlaying: playerManager.isPlaying, bassLevel: audioAnalyzer.bassLevel)
                 
                 Spacer()
-
-                VStack(spacing: 8) {
-                    Text(playerManager.currentTitle)
-                        .font(.subheadline)
-                        .bold()
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    Text(playerManager.playbackState)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
                 
-                // 🔧 ADDED: BPM manual slider control section
                 VStack(spacing: 10) {
                     Text("Adjust Puppet Tempo: \(Int(manualBPM)) BPM")
                         .font(.headline)
@@ -61,6 +55,17 @@ struct ContentView: View {
                 .background(Color(.secondarySystemBackground))
                 .cornerRadius(16)
                 .padding(.horizontal)
+                
+                VStack(spacing: 8) {
+                    Text(playerManager.currentTitle)
+                        .font(.subheadline)
+                        .bold()
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    Text(playerManager.playbackState)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
                 
                 HStack(spacing: 30) {
                     Button(action: {
@@ -93,7 +98,6 @@ struct ContentView: View {
         .sheet(isPresented: $showPicker) {
             MediaPickerRepresentation(playerManager: playerManager)
         }
-        // 🔧 CHANGE: Start monitoring with user's manual BPM state
         .onChange(of: playerManager.isPlaying) { oldState, isPlaying in
             if isPlaying {
                 audioAnalyzer.startMonitoring(bpm: manualBPM)
@@ -101,17 +105,16 @@ struct ContentView: View {
                 audioAnalyzer.stopMonitoring()
             }
         }
-        // 🔧 ADDED: Update the puppet speed in real-time when user drags the slider
+        // 🔧 CHANGE: Update the puppet speed AND save the preference locally immediately
         .onChange(of: manualBPM) { oldBPM, newBPM in
+            UserDefaults.standard.set(newBPM, forKey: "UserSavedManualBPM")
             if playerManager.isPlaying {
                 audioAnalyzer.stopMonitoring()
                 audioAnalyzer.startMonitoring(bpm: newBPM)
             }
         }
-        // 🔧 ADDED: When a new song loads, overwrite slider with the song's estimated BPM
-        .onChange(of: playerManager.currentBPM) { oldBPM, newBPM in
-            self.manualBPM = newBPM
-        }
+        // 🔧 DELETED: .onChange(of: playerManager.currentBPM) has been removed!
+        // This ensures shifting songs will NO LONGER override user's manual preference.
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .background {
                 playerManager.saveCurrentPlaybackTime()
