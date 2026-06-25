@@ -10,9 +10,22 @@
 		476F34EA2FED3CC700DF44B9 /* YUIKE-App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "YUIKE-App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		476F34F92FED434E00DF44B9 /* Exceptions for "YUIKE-App" folder in "YUIKE-App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 476F34E92FED3CC700DF44B9 /* YUIKE-App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		476F34EC2FED3CC700DF44B9 /* YUIKE-App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				476F34F92FED434E00DF44B9 /* Exceptions for "YUIKE-App" folder in "YUIKE-App" target */,
+			);
 			path = "YUIKE-App";
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,8 @@
 				DEVELOPMENT_TEAM = GXV9SV6G7X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "YUIKE-App/Info.plist";
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Access your music library to sync with this visualizer";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +303,8 @@
 				DEVELOPMENT_TEAM = GXV9SV6G7X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "YUIKE-App/Info.plist";
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Access your music library to sync with this visualizer";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
