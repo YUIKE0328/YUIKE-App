@@ -10,7 +10,6 @@ import MediaPlayer
 
 struct ContentView: View {
     @StateObject private var playerManager = MusicPlayerManager()
-    // Add the audio analyzer to the view
     @StateObject private var audioAnalyzer = AudioAnalyzer()
     @State private var showPicker = false
     @Environment(\.scenePhase) private var scenePhase
@@ -27,7 +26,6 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                // Pass the real-time bass level to the puppet
                 PuppetView(isPlaying: playerManager.isPlaying, bassLevel: audioAnalyzer.bassLevel)
                 
                 Spacer()
@@ -73,7 +71,7 @@ struct ContentView: View {
         .sheet(isPresented: $showPicker) {
             MediaPickerRepresentation(playerManager: playerManager)
         }
-        // Start/Stop audio monitoring based on playback state
+        // Handle engine toggle solely based on player state
         .onChange(of: playerManager.isPlaying) { oldState, isPlaying in
             if isPlaying {
                 audioAnalyzer.startMonitoring()
