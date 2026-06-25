@@ -11,6 +11,9 @@ import MediaPlayer
 struct ContentView: View {
     @StateObject private var playerManager = MusicPlayerManager()
     @State private var showPicker = false
+    
+    // Environment value to track the app's current lifecycle state
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 30) {
@@ -59,39 +62,11 @@ struct ContentView: View {
         .sheet(isPresented: $showPicker) {
             MediaPickerRepresentation(playerManager: playerManager)
         }
-    }
-}
-
-struct MediaPickerRepresentation: UIViewControllerRepresentable {
-    let playerManager: MusicPlayerManager
-    
-    func makeUIViewController(context: Context) -> MPMediaPickerController {
-        let picker = MPMediaPickerController(mediaTypes: .music)
-        picker.allowsPickingMultipleItems = false
-        picker.delegate = context.coordinator
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: MPMediaPickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, MPMediaPickerControllerDelegate {
-        var parent: MediaPickerRepresentation
-        
-        init(_ parent: MediaPickerRepresentation) {
-            self.parent = parent
-        }
-        
-        func mediaPicker(_ mediaPicker: MPMediaPickerController, didPickMediaItems mediaItemCollection: MPMediaItemCollection) {
-            parent.playerManager.setCollection(mediaItemCollection)
-            mediaPicker.dismiss(animated: true, completion: nil)
-        }
-        
-        func mediaPickerDidCancel(_ mediaPicker: MPMediaPickerController) {
-            mediaPicker.dismiss(animated: true, completion: nil)
+        // Detect when the app is closed or moved to the background
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .background {
+                playerManager.stop()
+            }
         }
     }
 }

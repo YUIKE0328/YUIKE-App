@@ -109,4 +109,9 @@ class MusicPlayerManager: ObservableObject {
             }
         }
     }
+    
+    func stop() {
+        musicPlayer.stop()
+        updatePlaybackState()
+    }
 }
