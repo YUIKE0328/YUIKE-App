@@ -1,6 +1,5 @@
 //
-//  YUIKE_AppApp.swift
-//  YUIKE-App
+//  YUIKE-App.swift
 //
 //  Created by Kuniaki Yui on 2026/06/25.
 //
