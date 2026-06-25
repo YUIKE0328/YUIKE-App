@@ -60,9 +60,37 @@ class MusicPlayerManager: ObservableObject {
     }
     
     func setCollection(_ collection: MPMediaItemCollection) {
-        // Reset the restore flag when a brand new song is manually picked by user
         needsTimeToRestore = false
-        musicPlayer.setQueue(with: collection)
+            
+        // 🔧 FIX: If the user picked a single song, find its album and queue the whole album
+        if collection.items.count == 1, let chosenItem = collection.items.first {
+            let albumTitle = chosenItem.albumTitle ?? ""
+            let artist = chosenItem.artist ?? ""
+            
+            // Query the user's library for all songs in this specific album
+            let query = MPMediaQuery.albums()
+            let albumPredicate = MPMediaPropertyPredicate(value: albumTitle, forProperty: MPMediaItemPropertyAlbumTitle)
+            let artistPredicate = MPMediaPropertyPredicate(value: artist, forProperty: MPMediaItemPropertyArtist)
+            
+            query.addFilterPredicate(albumPredicate)
+            if !artist.isEmpty {
+                query.addFilterPredicate(artistPredicate)
+            }
+            
+            if let albumItems = query.items, !albumItems.isEmpty {
+                // Queue the entire album so iOS knows what to play next
+                musicPlayer.setQueue(with: query)
+                // Tell the player to start specifically with the song the user tapped
+                musicPlayer.nowPlayingItem = chosenItem
+            } else {
+                // Fallback: If album query fails, just queue the single song
+                musicPlayer.setQueue(with: collection)
+            }
+        } else {
+            // If it's already a multi-song playlist, just pass it through directly
+            musicPlayer.setQueue(with: collection)
+        }
+        
         musicPlayer.play()
         updatePlaybackState()
         updateNowPlayingItem()

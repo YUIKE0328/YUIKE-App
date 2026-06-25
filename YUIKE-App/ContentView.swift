@@ -125,5 +125,12 @@ struct ContentView: View {
                 }
             }
         }
+        // 🔧 ADDED: Refresh the visualizer loop immediately when the track automatically advances
+        .onChange(of: playerManager.currentTitle) { oldTitle, newTitle in
+            if playerManager.isPlaying {
+                audioAnalyzer.stopMonitoring()
+                audioAnalyzer.startMonitoring(bpm: manualBPM)
+            }
+        }
     }
 }
