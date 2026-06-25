@@ -10,14 +10,19 @@ import MediaPlayer
 import Combine
 
 class MusicPlayerManager: ObservableObject {
-    private let musicPlayer = MPMusicPlayerController.systemMusicPlayer
+    private let musicPlayer = MPMusicPlayerController.applicationMusicPlayer
     private var cancellables = Set<AnyCancellable>()
     
     @Published var isPlaying: Bool = false
     @Published var currentTitle: String = "No Song Selected"
     @Published var playbackState: String = "Stopped"
-    // 🔧 ADDED: Track the BPM of the current song
     @Published var currentBPM: Double = 120.0
+    
+    private let lastSongIDKey = "LastPlayedSongPersistentID"
+    private let lastPlaybackTimeKey = "LastPlayedSongPlaybackTime"
+    
+    // 🔧 ADDED: A temporary flag to ensure we skip to the saved time only once when playback starts
+    private var needsTimeToRestore: Bool = false
     
     init() {
         let notificationCenter = NotificationCenter.default
@@ -31,8 +36,9 @@ class MusicPlayerManager: ObservableObject {
             .store(in: &cancellables)
             
         musicPlayer.beginGeneratingPlaybackNotifications()
+        
+        restoreLastPlayedItem()
         updatePlaybackState()
-        updateNowPlayingItem()
     }
     
     deinit {
@@ -41,6 +47,7 @@ class MusicPlayerManager: ObservableObject {
     
     func playOrPause() {
         if musicPlayer.playbackState == .playing {
+            saveCurrentPlaybackTime()
             musicPlayer.pause()
         } else {
             musicPlayer.play()
@@ -48,25 +55,52 @@ class MusicPlayerManager: ObservableObject {
     }
     
     func stop() {
+        saveCurrentPlaybackTime()
         musicPlayer.stop()
     }
     
-    // 🔧 FIX: Add the missing setCollection method back to the manager
     func setCollection(_ collection: MPMediaItemCollection) {
+        // Reset the restore flag when a brand new song is manually picked by user
+        needsTimeToRestore = false
         musicPlayer.setQueue(with: collection)
-        // Automatically start playing when a new collection is set
         musicPlayer.play()
         updatePlaybackState()
         updateNowPlayingItem()
     }
     
+    func saveCurrentPlaybackTime() {
+        let currentTime = musicPlayer.currentPlaybackTime
+        // Only save valid timestamps (avoid negative or arbitrary massive system numbers)
+        if currentTime >= 0 && currentTime < 86400 {
+            UserDefaults.standard.set(currentTime, forKey: lastPlaybackTimeKey)
+        }
+    }
+    
     private func updatePlaybackState() {
         isPlaying = (musicPlayer.playbackState == .playing)
+        
+        // 🔧 FIX: Check if we need to restore the previous playback timestamp when the player starts running
+        if musicPlayer.playbackState == .playing && needsTimeToRestore {
+            needsTimeToRestore = false // Consume the flag immediately to avoid infinite looping
+            let savedTime = UserDefaults.standard.double(forKey: lastPlaybackTimeKey)
+            if savedTime > 0 {
+                // Apply a tiny 0.1s delay to let the audio hardware stabilize before seeking
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.musicPlayer.currentPlaybackTime = savedTime
+                }
+            }
+        }
+        
         switch musicPlayer.playbackState {
         case .playing: playbackState = "Playing"
         case .paused: playbackState = "Paused"
         case .stopped: playbackState = "Stopped"
         default: playbackState = "Unknown"
+        }
+        
+        // Continuously save time during updates except when we are waiting to restore
+        if !needsTimeToRestore {
+            saveCurrentPlaybackTime()
         }
     }
     
@@ -75,14 +109,52 @@ class MusicPlayerManager: ObservableObject {
             let title = currentItem.title ?? "Unknown Title"
             currentTitle = title
             
-            // Try to get hardcoded metadata first
+            let idString = String(currentItem.persistentID)
+            UserDefaults.standard.set(idString, forKey: lastSongIDKey)
+            
             let bpm = currentItem.beatsPerMinute
             if bpm > 0 {
                 currentBPM = Double(bpm)
             } else {
-                // 🔧 FIX: Generate a consistent, song-specific dynamic BPM (70 to 160) using string hashing
                 let hash = abs(title.hashValue)
-                let calculatedBPM = 70.0 + Double(hash % 91) // 70 + (0 to 90) = 70 to 160 BPM
+                let calculatedBPM = 70.0 + Double(hash % 91)
+                currentBPM = calculatedBPM
+            }
+        }
+    }
+    
+    private func restoreLastPlayedItem() {
+        guard let savedIDString = UserDefaults.standard.string(forKey: lastSongIDKey),
+              let savedID = UInt64(savedIDString) else {
+            currentTitle = "No Song Selected"
+            currentBPM = 120.0
+            return
+        }
+        
+        let propertyPredicate = MPMediaPropertyPredicate(value: savedID, forProperty: MPMediaItemPropertyPersistentID)
+        let query = MPMediaQuery()
+        query.addFilterPredicate(propertyPredicate)
+        
+        if let items = query.items, let lastItem = items.first {
+            let collection = MPMediaItemCollection(items: [lastItem])
+            musicPlayer.setQueue(with: collection)
+            
+            // 🔧 FIX: Instead of setting time now, turn on the flag.
+            // We will jump to the saved time the moment the user taps "Play".
+            let savedTime = UserDefaults.standard.double(forKey: lastPlaybackTimeKey)
+            if savedTime > 0 {
+                needsTimeToRestore = true
+            }
+            
+            let title = lastItem.title ?? "Unknown Title"
+            currentTitle = title
+            
+            let bpm = lastItem.beatsPerMinute
+            if bpm > 0 {
+                currentBPM = Double(bpm)
+            } else {
+                let hash = abs(title.hashValue)
+                let calculatedBPM = 70.0 + Double(hash % 91)
                 currentBPM = calculatedBPM
             }
         } else {

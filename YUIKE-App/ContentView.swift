@@ -38,7 +38,6 @@ struct ContentView: View {
                     Text(playerManager.playbackState)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    // Optional: Debug text to see current synced BPM on screen
                     Text("BPM: \(Int(playerManager.currentBPM))")
                         .font(.caption)
                         .foregroundColor(.blue)
@@ -75,7 +74,6 @@ struct ContentView: View {
         .sheet(isPresented: $showPicker) {
             MediaPickerRepresentation(playerManager: playerManager)
         }
-        // Handle playback toggle with specific BPM data passed in
         .onChange(of: playerManager.isPlaying) { oldState, isPlaying in
             if isPlaying {
                 audioAnalyzer.startMonitoring(bpm: playerManager.currentBPM)
@@ -83,7 +81,6 @@ struct ContentView: View {
                 audioAnalyzer.stopMonitoring()
             }
         }
-        // 🔧 ADDED: Re-calculate analyzer tempo when the song (BPM) changes dynamically
         .onChange(of: playerManager.currentBPM) { oldBPM, newBPM in
             if playerManager.isPlaying {
                 audioAnalyzer.stopMonitoring()
@@ -92,8 +89,13 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .background {
-                playerManager.stop()
+            // 🔧 ADDED: Explicitly lock in the playback timestamp right before the app loses focus
+                playerManager.saveCurrentPlaybackTime()
                 audioAnalyzer.stopMonitoring()
+            } else if newPhase == .active {
+                if playerManager.isPlaying {
+                audioAnalyzer.startMonitoring(bpm: playerManager.currentBPM)
+                }
             }
         }
     }
