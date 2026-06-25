@@ -11,58 +11,69 @@ import MediaPlayer
 struct ContentView: View {
     @StateObject private var playerManager = MusicPlayerManager()
     @State private var showPicker = false
-    
-    // Environment value to track the app's current lifecycle state
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        VStack(spacing: 30) {
-            Text("Audio Visualizer")
-                .font(.title)
-                .bold()
+        ZStack {
+            // Dark background for better visualizer contrast
+            Color(.systemBackground)
+                .ignoresSafeArea()
             
-            // Visualizer Placeholder Animation
-            Circle()
-                .fill(playerManager.isPlaying ? Color.purple : Color.gray)
-                .frame(width: 150, height: 150)
-                .scaleEffect(playerManager.isPlaying ? 1.1 : 1.0)
-                .animation(playerManager.isPlaying ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: playerManager.isPlaying)
-            
-            VStack(spacing: 10) {
-                Text(playerManager.currentTitle)
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                Text(playerManager.playbackState)
-                    .foregroundColor(.secondary)
-            }
-            
-            HStack(spacing: 40) {
-                Button(action: {
-                    showPicker = true
-                }) {
-                    Text("Select Song")
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+            VStack(spacing: 40) {
+                Text("Puppet Visualizer")
+                    .font(.title)
+                    .bold()
+                
+                Spacer()
+                
+                // The Marionette Puppet (Animated by playback state)
+                PuppetView(isPlaying: playerManager.isPlaying)
+                
+                Spacer()
+                
+                // Track Info Display
+                VStack(spacing: 8) {
+                    Text(playerManager.currentTitle)
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    Text(playerManager.playbackState)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
                 
-                Button(action: {
-                    playerManager.playOrPause()
-                }) {
-                    Text(playerManager.isPlaying ? "Pause" : "Play")
-                        .padding()
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                // Control Buttons
+                HStack(spacing: 30) {
+                    Button(action: {
+                        showPicker = true
+                    }) {
+                        Label("Select Song", systemImage: "music.note.list")
+                            .font(.headline)
+                            .padding()
+                            .frame(width: 160)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    Button(action: {
+                        playerManager.playOrPause()
+                    }) {
+                        Label(playerManager.isPlaying ? "Pause" : "Play", systemImage: playerManager.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.headline)
+                            .padding()
+                            .frame(width: 140)
+                            .background(playerManager.isPlaying ? Color.orange : Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
                 }
+                .padding(.bottom, 20)
             }
         }
-        .padding()
         .sheet(isPresented: $showPicker) {
             MediaPickerRepresentation(playerManager: playerManager)
         }
-        // Detect when the app is closed or moved to the background
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .background {
                 playerManager.stop()
