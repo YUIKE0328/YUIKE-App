@@ -14,27 +14,32 @@ class AudioAnalyzer: ObservableObject {
     private var timer: AnyCancellable?
     private var timeCounter: Double = 0.0
     
-    func startMonitoring() {
+    // 🔧 CHANGE: Accept target BPM to calculate exact physics matching the rhythm
+    func startMonitoring(bpm: Double) {
         guard timer == nil else { return }
         
-        // 60 FPS smoother timer loop
-        timer = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common)
+        let fps = 60.0
+        // Convert BPM (Beats Per Minute) into radians increment per frame for a smooth 1-beat loop
+        // Formula: (BPM / 60 seconds) * 2 * PI / FPS
+        let stepIncrement = (bpm / 60.0) * Double.pi / fps
+        
+        timer = Timer.publish(every: 1.0 / fps, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 
-                // Advance time counter
-                self.timeCounter += 0.25
+                // Progress time based on current song tempo
+                self.timeCounter += stepIncrement
                 
-                // Generate a pseudo-BPM rhythmic bounce using absolute sine wave
+                // Perfect rhythmic bounce aligned with the beat
                 let rawWave = abs(sin(self.timeCounter))
                 
-                // Add a bit of natural variation so it doesn't look completely robotic
-                let noise = Double.random(in: -0.05...0.05)
+                // Add natural flavor
+                let noise = Double.random(in: -0.03...0.03)
                 let normalized = min(max(rawWave + noise, 0.0), 1.0)
                 
-                // Apply a gentle low-pass filter for smooth bone movement
-                self.bassLevel = CGFloat(normalized * 0.8 + Double(self.bassLevel) * 0.2)
+                // Smooth frame filter
+                self.bassLevel = CGFloat(normalized * 0.85 + Double(self.bassLevel) * 0.15)
             }
     }
     

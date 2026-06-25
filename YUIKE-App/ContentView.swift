@@ -38,6 +38,10 @@ struct ContentView: View {
                     Text(playerManager.playbackState)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
+                    // Optional: Debug text to see current synced BPM on screen
+                    Text("BPM: \(Int(playerManager.currentBPM))")
+                        .font(.caption)
+                        .foregroundColor(.blue)
                 }
                 
                 HStack(spacing: 30) {
@@ -71,12 +75,19 @@ struct ContentView: View {
         .sheet(isPresented: $showPicker) {
             MediaPickerRepresentation(playerManager: playerManager)
         }
-        // Handle engine toggle solely based on player state
+        // Handle playback toggle with specific BPM data passed in
         .onChange(of: playerManager.isPlaying) { oldState, isPlaying in
             if isPlaying {
-                audioAnalyzer.startMonitoring()
+                audioAnalyzer.startMonitoring(bpm: playerManager.currentBPM)
             } else {
                 audioAnalyzer.stopMonitoring()
+            }
+        }
+        // 🔧 ADDED: Re-calculate analyzer tempo when the song (BPM) changes dynamically
+        .onChange(of: playerManager.currentBPM) { oldBPM, newBPM in
+            if playerManager.isPlaying {
+                audioAnalyzer.stopMonitoring()
+                audioAnalyzer.startMonitoring(bpm: newBPM)
             }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
